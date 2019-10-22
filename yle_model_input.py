@@ -1,25 +1,18 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error
-from pandas.plotting import scatter_matrix
-import matplotlib.pyplot as plt
-from pandas.plotting import scatter_matrix
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
-
-
+from sklearn.preprocessing import LabelEncoder
 
 def yle_model(userdf):
    
    # 1 LOAD AND INSPECT DATA
-
    yle_data = pd.read_csv('/home/chpatola/Desktop/Skola/DataSci/Project_work/yle_data.csv', sep=';', encoding="ISO-8859-1") 
-   yle_data.shape # 1997 observations
 
    # 2 CHOOSE COLUMNS WE WANT TO KEEP
    data = yle_data.loc[:,['id','ikä','sukupuoli','valittu','julkkis','puolue','Toimin tällä hetkellä kansanedustajana.','Koulutus','Kielitaito',
@@ -28,7 +21,6 @@ def yle_model(userdf):
    # 3 RESHAPE SPECIFIC DATA BEFORE NAN-REMOVAL
 
    #3.1 Merge similar Ammattiasema with each other
-
    data.Ammattiasema.value_counts()
    data.Ammattiasema.replace("asiantuntijatehtävä ", "expert/highly_ed",inplace = True)
    data.Ammattiasema.replace("toimihenkilö ", "expert/highly_ed" , inplace=True)
@@ -36,14 +28,12 @@ def yle_model(userdf):
    data.Ammattiasema.value_counts()
 
    #3.2 Merge similar Koulutus with each other
-
    data.Koulutus.value_counts()
    data.Koulutus.replace("ammattitutkinto ", "vocational or matric. exam",inplace = True)
    data.Koulutus.replace("ylioppilas ", "vocational or matric. exam" , inplace=True)
    data.Koulutus.value_counts()
 
    #3.3 Translate Column names to english
-
    def nyName (old,new):
       data.rename(columns={old: new}, inplace = True)
 
@@ -66,13 +56,11 @@ def yle_model(userdf):
    data.columns
 
    #3.4 Create new column containing number of languages spoken
-
    data['languages_known']=data['languages'].str.count(' ')
    data.drop(columns=['languages'], inplace = True)
 
    #3.5 Create new column based on member in current prime minister party
    # (no NaN:s in this column) or not. 
-
    def label_race (row):
       if row['party'] == 'Kansallinen Kokoomus' :
          return 1
@@ -81,24 +69,23 @@ def yle_model(userdf):
    data['PM_party']=data.apply (lambda row: label_race(row), axis=1)
 
    data.drop(columns='party', inplace=True)
-   data.columns
 
    # 4 INSPECTION AND HANDLING OF NAN
-   NrNas = data.isna().sum()
+   data.isna().sum()
    data[data.age==0].count() # we have candidates with age 0
    dataage =data[data.age !=0]
    medianIkä = dataage.age.median()
    data.age.replace(0, medianIkä, inplace = True)
    data[data.age ==0] # No 0-years old left
 
-   #5.1.2 Change NaN twitter to 0 och 1 instead of 1 and NaN
+   #4.1.2 Change NaN twitter to 0 och 1 instead of 1 and NaN
    data.twitter_account.fillna(0, inplace=True)
 
-   #5.2 Erase rows with too many NaN:s (we want high quality answers)
+   #4.2 Erase rows with too many NaN:s (we want high quality answers)
    data.isna().sum()
    data.dropna(axis = 0, inplace = True, thresh= 15)
 
-   #5.3 Handle NaN s for the rest of the columns
+   #4.3 Handle NaN s for the rest of the columns
    #We impute the NaN:s with the most common value and create separate columns to hold track of 
    #rows where we imputed a NaN for a specific columnd
 
@@ -110,8 +97,7 @@ def yle_model(userdf):
    my_imputer = SimpleImputer(strategy = "most_frequent")
    data_imp = pd.DataFrame(my_imputer.fit_transform(data_nonan))
    #Simple Imputer took away column names so we put them back
-   data_imp.columns = data_nonan.columns
-   data_imp.shape#26 columns  
+   data_imp.columns = data_nonan.columns  
    data_imp.isna().sum() # No more NaN:s in the DF!
    data_imp.dtypes#We need to fix the numeric data types back!
    data_imp[["id", "age","celebrity","currently_in_parliament","twitter_account",
@@ -119,7 +105,7 @@ def yle_model(userdf):
    "currently_in_parliament","twitter_account","languages_known","PM_party"]].apply(pd.to_numeric)
    data_imp.dtypes
 
-   # 6 SEPARATE INTO X AND y
+   # 5 SEPARATE INTO X AND y
    X = data_imp.drop(axis=1, columns=['elected','id'])
    X.columns
    y = data.elected
@@ -171,9 +157,7 @@ def yle_model(userdf):
    data1['yearly_income_new']=data1.apply (lambda row: income_race(row), axis=1)
    data1.drop(columns=['elect_budget','yearly_income'], inplace=True)
 
-
-   #9.2 Lable-encoder for the unordered categorical data
-   from sklearn.preprocessing import LabelEncoder
+   #7.2 Lable-encoder for the unordered categorical data
    # Make copy to avoid changing original data 
    label_X_train = data1.copy()
 
@@ -185,13 +169,9 @@ def yle_model(userdf):
    for col in categorical_cols: 
       label_X_train[col] = label_encoder.fit_transform(data1[col])
 
-   label_X_train.describe()
-   label_X_train.shape #1763 rows and 15 columns
-
    #*******This (above) is the way the input from the user will be like
 
-   #9.3 Onehotencoder for the columns we put label encoder on 
-   from sklearn.preprocessing import OneHotEncoder
+   #7.3 Onehotencoder for the columns we put label encoder on 
 
    #Define columns to use it on
    categorical_cols_version2 =  categorical_cols.copy()
@@ -213,33 +193,31 @@ def yle_model(userdf):
 
    Final_X = OH_X_train
 
-   #9  DIVIDE INTO TRAIN AND TEST
+   #8  DIVIDE INTO TRAIN AND TEST
    train_X, val_X, train_y, val_y = train_test_split(Final_X, y, test_size = 0.3,random_state = 1,stratify =y)
 
-   #10 DEFINE AND FIT MODEL
+   #9 DEFINE AND FIT MODEL
    LDA = LinearDiscriminantAnalysis(solver='lsqr')
    LDA.fit(train_X,train_y)
 
-   #11 USE MODEL FOR PREDICTIONS
+   #10 USE MODEL FOR PREDICTIONS
 
-   #11.1 Predict on val_X
+   #10.1 Predict on val_X
    predictions = LDA.predict(val_X)
 
-   #11.2 Predict on user data
-   percent_predictions_user1 = LDA.predict_proba(userdf)#Gives prob for the row to belong to
-   #class 0 and 1 respectively
+   #10.2 Predict on user data
    percent_predictions_user2 =np.around(100*(LDA.predict_proba(userdf)[:,1]),decimals = 3) #Gives prob
    # for the row to belong to class 1 = seat in parliament
-   
+   '''
    print("\nModel performance report")
    print(classification_report(val_y, predictions))
    print("\n")
-  
+   '''
    return percent_predictions_user2[0]
    
 
 
-#Test with this data
+#Test function with this data
 '''
 
 mylist0 = [32,0,0,0,0,0,0,0,0,0,0,0,0,500,10000]
