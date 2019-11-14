@@ -8,6 +8,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder
+import xgboost as xgb
 
 def yle_model(userdf):
    
@@ -170,7 +171,7 @@ def yle_model(userdf):
       label_X_train[col] = label_encoder.fit_transform(data1[col])
 
    #*******This (above) is the way the input from the user will be like
-
+   
    #7.3 Onehotencoder for the columns we put label encoder on 
 
    #Define columns to use it on
@@ -195,31 +196,40 @@ def yle_model(userdf):
 
    #8  DIVIDE INTO TRAIN AND TEST
    train_X, val_X, train_y, val_y = train_test_split(Final_X, y, test_size = 0.3,random_state = 1,stratify =y)
-
+ 
    #9 DEFINE AND FIT MODEL
-   LDA = LinearDiscriminantAnalysis(solver='lsqr')
-   LDA.fit(train_X,train_y)
+   #Transform values to correct shape for XgB model
+   train_x_values = train_X.values
+   val_x_values = val_X.values
+   userdef_values = userdf.values
+
+   xg_reg = xgb.XGBClassifier(subsample=0.2,min_samples_split = 75,
+   max_features = 'sqrt',n_estimators=8)
+   xg_reg.fit(train_x_values, train_y)
 
    #10 USE MODEL FOR PREDICTIONS
 
    #10.1 Predict on val_X
-   predictions = LDA.predict(val_X)
+   predictions = xg_reg.predict(val_x_values)
 
    #10.2 Predict on user data
-   percent_predictions_user2 =np.around(100*(LDA.predict_proba(userdf)[:,1]),decimals = 3) #Gives prob
+   userd_newformat= pd.DataFrame(xg_reg.predict_proba(userdef_values))
+   percent_predictions_user =np.around((userd_newformat.iloc[0,1])*100,decimals = 3)#Gives prob
    # for the row to belong to class 1 = seat in parliament
+
+   classif_report = classification_report(val_y, predictions)
    '''
-   print("\nModel performance report")
-   print(classification_report(val_y, predictions))
-   print("\n")
+   print(accuracy_score(val_y, predictions))
+
    '''
-   return percent_predictions_user2[0]
+   
+   
+   return percent_predictions_user, classif_report
    
 
-
 #Test function with this data
-'''
 
+'''
 mylist0 = [32,0,0,0,0,0,0,0,0,0,0,0,0,500,10000]
 mylist1 = [32,1,1,1,1,1,1,1,1,1,1,1,1,500,10000]
 mylist2 = [32,1,1,1,2,2,1,1,2,2,2,1,1,500,10000]
@@ -234,9 +244,9 @@ mydataf = pd.DataFrame([mylist0, mylist1,mylist2,mylist3,mylist4,mylist5,mylist6
         'sex', 'celebrity', 'currently_in_parliament', 'education',
        'mother_tongue', 'twitter_account', 'children', 'employer',
        'work_status', 'languages_known', 'PM_party',
-       'external_election_funding', 'elect_budget_', 'yearly_income_'])
+       'external_election_funding', 'elect_budget_new ', 'yearly_income_new'])
 
-mydataf.shape#15 columns       
+mydataf.shape#15 columns    
 crit1 = mydataf.dtypes!=object
 cat2 = mydataf.columns[crit1].tolist()
 cat3 = cat2[4:10]
@@ -251,10 +261,17 @@ num_X_train2 = mydataf.drop(cat3, axis=1)
 OH_X_user = pd.concat([num_X_train2, OH_cols_train_user], axis=1)
 OH_X_user.shape#31 columns
 
-print('sending data to yle_model')
 
-print(yle_model(OH_X_user))
+print('sending data to yle_model')
+chance, statistics = yle_model(OH_X_user)
+
+print("Probability to get elected is")
+print(chance)
+print("Model info\n")
+print(statistics)
 '''
+
+
 
 
 

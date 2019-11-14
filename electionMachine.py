@@ -157,8 +157,9 @@ def electionMachine():
         #Process our user input with One Hot encoder: mother tougue, employer, education and work status
         userX= oneHotEnc(userInputDf)
         print('***** PREDICTION RESULT  *****\n' )
-        percent = yle_model(userX)
+        percent,modelInfo = yle_model(userX)
         print('Prediction to get elected is: %d percent '%percent )
+        #print(modelInfo)
         
         finish = input('\nDo you want to make another prediction, y/n?')
         if finish == "y":
