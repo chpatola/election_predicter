@@ -1,7 +1,7 @@
 # election_predicter
 This application predicts a candidates chance of getting elected into the Finnish national parliament.
 
-The data used for the prediction comes from avoindata.fi and consists of parliament candidates answers to yle's election machine 2015.
+The data used for the prediction comes from avoindata.fi and consists of parliament candidates answers to yle's election machine 2015: https://www.avoindata.fi/data/fi/dataset/eduskuntavaalien-2015-ylen-vaalikoneen-vastaukset-ja-ehdokkaiden-taustatiedot
 
 All files but yle.py are part of the user application, where one can try different background factors for
 parliament candidates and see their predicted chances of getting elected. yle.py is a file I have used to
