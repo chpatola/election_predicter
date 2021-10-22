@@ -1,10 +1,8 @@
+"""Model used for the prediction"""
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder
@@ -13,7 +11,10 @@ import xgboost as xgb
 def yle_model(userdf):
    
    # 1 LOAD AND INSPECT DATA
-   yle_data = pd.read_csv('/home/chpatola/Desktop/Skola/DataSci/Project_work/yle_data.csv', sep=';', encoding="ISO-8859-1") 
+   yle_data = pd.read_csv('/home/chpatola/Desktop/Skola/DataSci/Project_work/yle_data.csv',
+                          sep=';',
+                          encoding="ISO-8859-1"
+                          ) 
 
    # 2 CHOOSE COLUMNS WE WANT TO KEEP
    data = yle_data.loc[:,['id','ikä','sukupuoli','valittu','julkkis','puolue','Toimin tällä hetkellä kansanedustajana.','Koulutus','Kielitaito',
@@ -68,7 +69,6 @@ def yle_model(userdf):
       return 0
 
    data['PM_party']=data.apply (lambda row: label_race(row), axis=1)
-
    data.drop(columns='party', inplace=True)
 
    # 4 INSPECTION AND HANDLING OF NAN

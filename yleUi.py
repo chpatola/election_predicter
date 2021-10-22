@@ -1,7 +1,7 @@
+"""User interface"""
 from electionMachine import electionMachine
-def yleUi():
-    
 
+def yleUi():
     while True:
         ask=input("""\n***** Parliament Election Result Predicter *****\n
         With this program, you can define candidate characteristics and \n
@@ -19,7 +19,6 @@ def yleUi():
                 continue
         elif ask =="s":
             electionMachine()
-
         else:
             print("Unknown input")
             continue
